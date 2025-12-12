@@ -1,2 +1,4 @@
 terraform.*
 secrets.tf
+.terraform
+.terraform.lock.hcl
