@@ -31,6 +31,7 @@ locals {
 
 resource "aws_secretsmanager_secret" "db_creds" {
   name = "database_access_creds"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "db_creds_version" {
@@ -40,6 +41,7 @@ resource "aws_secretsmanager_secret_version" "db_creds_version" {
 
 resource "aws_secretsmanager_secret" "netbox_creds" {
   name = "netbox_access_creds"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "netbox_creds_version" {

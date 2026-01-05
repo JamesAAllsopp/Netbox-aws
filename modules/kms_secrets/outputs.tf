@@ -1,3 +1,4 @@
-output "db_creds_arn" {
-  value =aws_secretsmanager_secret_version.db_creds_version.arn
+output "db_creds" {
+  value = local.db_password_map
+  sensitive = true
 }
