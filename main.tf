@@ -20,3 +20,9 @@ module "lambda"{
   source       = "./modules/lambda"
 }
 
+module "redis" {
+  source    = "./modules/redis"
+  namespace = var.namespace
+  vpc_id = module.vpc_lambda.vpc.vpc_id
+  elasticache_subnets = module.vpc_lambda.vpc.elasticache_subnets
+}
