@@ -13,7 +13,16 @@ variable "vpc_id" {
   type = string
 }
 
-variable "elasticache_subnets" {
-  description = "elasticache_subnets"
+variable "vpc_subnets" {
+  description = "The subnet the DB should be put in"
   type = list
 }
+
+variable "cidra" {
+    type = string
+}
+
+variable "cidrb"{
+    type = string
+}
+

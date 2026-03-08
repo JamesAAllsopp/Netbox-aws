@@ -4,7 +4,7 @@ resource "random_password" "db_password" {
   upper           = true
   lower           = true
   numeric         = true
-  override_special = "!@#%^&*"
+  override_special = ""
 }
 
 resource "random_password" "netbox_password" {
@@ -13,18 +13,18 @@ resource "random_password" "netbox_password" {
   upper           = true
   lower           = true
   numeric         = true
-  override_special = "!@#%^&*"
+  override_special = ""
 }
 
 locals {
   # This map now correctly references the resource output
   db_password_map = {
-    username = "admin"
+    username = var.admin_user
     password = random_password.db_password.result # Allowed in 'locals'
   }
 
   netbox_password_map = {
-    username = "netboxadmin"
+    username = var.netbox_user
     password = random_password.netbox_password.result # Allowed in 'locals'
   }
 }
