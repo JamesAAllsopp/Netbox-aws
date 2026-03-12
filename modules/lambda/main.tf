@@ -51,10 +51,10 @@ resource "aws_iam_policy" "iam_policy_for_lambda" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
- role        = aws_iam_role.lambda_role.name
- policy_arn  = aws_iam_policy.iam_policy_for_lambda.arn
-}
+#resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
+# role        = aws_iam_role.lambda_role.name
+# policy_arn  = aws_iam_policy.iam_policy_for_lambda.arn
+#}
 
 #Trying to create a secret policy and attach it to the role
 resource "aws_iam_policy" "iam_policy_for_secrets" {
@@ -68,20 +68,38 @@ resource "aws_iam_policy" "iam_policy_for_secrets" {
 	       "Effect": "Allow",
 	       "Action": "secretsmanager:GetSecretValue",
 	       "Resource": "arn:aws:secretsmanager:${var.region}:${var.aws_account_id}:secret:${var.database_access_creds}"
+	     },
+             {
+	       "Effect": "Allow",
+	       "Action": "secretsmanager:GetSecretValue",
+	       "Resource": "arn:aws:secretsmanager:${var.region}:${var.aws_account_id}:secret:${var.database_access_creds}"
 	     }
      ]
      })
 }
 
+#Running into a problem with this where for_each doesn't know this far in advance what the resources will be
 resource "aws_iam_role_policy_attachment" "attach_iam_secrets_policy_to_iam_role" {
  role        = aws_iam_role.lambda_role.name
  policy_arn  = aws_iam_policy.iam_policy_for_secrets.arn
 }
 
+resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
+ role        = aws_iam_role.lambda_role.name
+ policy_arn  = aws_iam_policy.iam_policy_for_lambda.arn
+}
+
+#Need when we try to put the lambda in the VPC
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 data "archive_file" "zip_the_python_code" {
- type        = "zip"
- source_dir  = "${path.module}/python/"
- output_path = "${path.module}/python/simple-lambda.zip"
+ type         = "zip"
+ source_dir   = "${path.module}/python/python"
+  output_path = "${path.module}/python/simple-lambda.zip"
+  excludes    = ["${path.module}/python/python/__pycache__"]
 }
 
 #Need to use a prebuilt layer to access secrets
@@ -97,15 +115,24 @@ data "archive_file" "zip_the_python_code" {
 resource "aws_lambda_function" "create_db_terraform_lambda_func" {
  filename                       = data.archive_file.zip_the_python_code.output_path
  function_name                  = "create-db"
- role                           = aws_iam_role.lambda_role.arn
- handler                        = "index.lambda_handler"
+ role                           =  aws_iam_role.lambda_role.arn
+ handler                        = "create_db_lambda.lambda_handler"
  runtime                        = "python3.12"
  source_code_hash               = data.archive_file.zip_the_python_code.output_base64sha256
- depends_on                     = [aws_iam_role_policy_attachment.attach_iam_policy_to_iam_role]
+ timeout                        = 60
+  depends_on                     = [aws_iam_role_policy_attachment.attach_iam_secrets_policy_to_iam_role,
+    aws_iam_role_policy_attachment.attach_iam_policy_to_iam_role,
+    aws_iam_role_policy_attachment.lambda_vpc_access
+  ]
   environment {
     variables          = {
       "RDS_ADDRESS" = "${var.rds_address}"
     }
   }
   layers        = [ "arn:aws:lambda:eu-west-2:133256977650:layer:AWS-Parameters-and-Secrets-Lambda-Extension:24", aws_lambda_layer_version.psycopg2_binary_lambda_layer.arn]
+  vpc_config {
+    #vpc_id             = var.vpc_id
+    subnet_ids         = [var.subnet]
+    security_group_ids = [var.sg_rds]
+  }
 }

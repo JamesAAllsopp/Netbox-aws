@@ -30,21 +30,22 @@ module "kms_secrets" {
 module "rds" {
   source       = "./modules/rds"
   db_secrets   = module.kms_secrets.db_creds
-  vpc_subnets  = tolist(["subnet-0d274c8027b86e0e3","subnet-0230bf131afb0a515"]) #module.vpc_lambda.vpc.database_subnets
+  vpc_subnets  = tolist(["subnet-0d274c8027b86e0e3","subnet-0230bf131afb0a515"]) #module.vpc_lambda.vpc.database_subnets - need to parse these into a variable, or get them from the vpc
   namespace    = var.namespace
   cidra        = "172.19.6.80/28"
   cidrb        = "172.19.6.64/28"
   vpc_id       = var.vpc_id
 }
 
-module "lambda"{
-  source       = "./modules/lambda"
-  namespace = var.namespace
-  region = var.region
-  rds_address = module.rds.db_address
-  database_access_creds =  "database_access_creds"  #Should use a name from the aws_secretsmanager_secret resource.
-
-  aws_account_id =  data.aws_caller_identity.current.account_id
+module "lambda" {
+  source                = "./modules/lambda"
+  namespace             = var.namespace
+  region                = var.region
+  rds_address           = module.rds.db_address
+  database_access_creds = "database_access_creds"  #Should use a name from the aws_secretsmanager_secret resource.
+  aws_account_id        = data.aws_caller_identity.current.account_id
+  sg_rds                = module.rds.rds_sg
+  subnet                = "subnet-0d274c8027b86e0e3"
 }
 
 module "redis" {

@@ -1,6 +1,6 @@
 resource "random_password" "db_password" {
   length           = 16
-  special         = true
+  special         = false
   upper           = true
   lower           = true
   numeric         = true
@@ -9,7 +9,7 @@ resource "random_password" "db_password" {
 
 resource "random_password" "netbox_password" {
   length           = 16
-  special         = true
+  special         = false
   upper           = true
   lower           = true
   numeric         = true

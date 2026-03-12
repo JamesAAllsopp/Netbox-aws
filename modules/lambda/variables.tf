@@ -22,3 +22,16 @@ variable "aws_account_id" {
   description = "aws account id"
   type        = string
 }
+
+
+variable "sg_rds" {
+  description = "id of the security group"
+  type        = string
+}
+
+variable "subnet" {
+  description = "Subnet of the project"
+  type        = string
+}
+
+
